@@ -5,7 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outlands_ans2/base/base_page.dart';
+import 'package:outlands_ans2/database/db_helper.dart';
+import 'package:outlands_ans2/model/teacher_model.dart';
 import 'package:outlands_ans2/util/constants.dart';
+import 'package:outlands_ans2/widget/button_widget.dart';
+
+import '../model/student_model.dart';
+import 'custom/custom_toast.dart';
 
 class MyHomePage extends BasePage {
   const MyHomePage({super.key});
@@ -17,12 +23,13 @@ class MyHomePage extends BasePage {
 class _MyHomePageState extends BasePageState<MyHomePage> {
 
   String _selectRadio = '';
+  late List getSelectData;
   late bool _isRegister = false, _isLogin = false, _isSecret = true;
   late final List<String> _listHelper = ['', ''], _listText = ['', ''];
   late final List<TextEditingController> _listController = [TextEditingController(), TextEditingController()];
 
   @override
-  String get title => Constants.home;
+  String setTitle() => Constants.home;
 
   Widget _radioWidget(int index, String name) {
     return Row(
@@ -76,15 +83,9 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
               ),
             ),
             contentPadding: EdgeInsets.symmetric(horizontal: 8.w),
-            focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.w),
-                borderSide: BorderSide(color: Colors.blue, width: 1.w)),
-            border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.w),
-                borderSide: BorderSide(color: Colors.blue, width: 1.w)),
-            enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.w),
-                borderSide: BorderSide(color: Colors.black, width: 1.w)),
+            focusedBorder:Constants.textBorder,
+            border: Constants.textBorder,
+            enabledBorder: Constants.textBorder,
           ),
           inputFormatters: [
             FilteringTextInputFormatter.allow(index == 0 ? RegExp("[T]|[S]|[0-9]") : RegExp("[a-zA-Z]|[0-9]|[*]")),
@@ -118,43 +119,18 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
     );
   }
 
-  Widget _btn(int index, String text, {Function? tap}) {
-    return Ink(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.w),
-      decoration: BoxDecoration(
-        color: Colors.blue,
-        borderRadius: BorderRadius.all(Radius.circular(10.w)),
-        border: Border.all(width: 1.w),
-      ),
-      child: InkWell(
-        child: Text(text, maxLines: 1, style: Constants.textButton),
-        onTap: () => tap == null ? null : tap(),
-      ),
-    );
-  }
-
   Future<void> _check() async {
     for (int i = 0; i < _listHelper.length; i++) {
       if (_isRegister || _isLogin) {
         if (_selectRadio.isEmpty) {
           _listHelper[i] = '請選擇身份';
         } else {
-          if (_isRegister) {
-            if (i == 0) {
-              continue;
-            } else {
-              if (_listController[i].text.length < 6 || _listController[i].text.isEmpty) {
-                _listHelper[i] = '請輸入6位英文數字';
-              } else {
-                _checkPassword(i);
-              }
-            }
-          }
-          if (_isLogin) {
+          if (_isRegister || _isLogin) {
             if (_listController[i].text.length < 6 || _listController[i].text.isEmpty) {
               _listHelper[i] = '請輸入6位英文數字';
             } else {
-              i == 0 ? _checkAccount(i) : _checkPassword(i) ;
+              i == 0 ? _checkAccount() : _checkPassword();
+              if (_isLogin) _checkSQL(i);
             }
           }
         }
@@ -165,20 +141,41 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
     if (_isRegister && _listHelper[1] == '驗證成功') {
       _isRegister = false;
       _isLogin = false;
-      final SnackBarAction snackBarAction = SnackBarAction(label: '', onPressed: () => Navigator.pop(context));
-      SnackBar(content: Text('註冊成功', style: Constants.textField22), action: snackBarAction);
+      getSelectData = await _selectData();
+      if (getSelectData.length == 99999) {
+        if (mounted) Toast.toast(context, msg: '帳號數量已滿, 請聯絡客服人員, 謝謝', position: ToastPosition.center);
+        return;
+      }
+      final int id = getSelectData.length + 1;
+      final String account = Constants.setAccount(getSelectData.length + 1);
+      await DBHelper.internal().insert(
+          _selectRadio == Constants.teacher
+          ? Constants.teacher
+          : _selectRadio == Constants.student
+          ? Constants.student
+          : '',
+        _selectRadio == Constants.teacher
+            ? [TeacherModel(id, account, _listController[1].text, '', '', '')]
+            : _selectRadio == Constants.student
+            ? [StudentModel(id, account, _listController[1].text, '', '')]
+            : [],
+      );
+      final String identify = _selectRadio == Constants.teacher
+          ? 'T'
+          : _selectRadio == Constants.student
+          ? 'S'
+          : '';
+      if (mounted) Toast.toast(context, msg: '註冊成功\n帳號: $identify$account\n請登入帳號編輯資料', position: ToastPosition.center);
       return;
     }
-    final list = _listHelper.where((helper) => helper == '驗證成功').toList();
-    _isRegister = false;
-    _isLogin = false;
-    if (_isLogin && list.length == _listHelper.length) {
-      context.push('/${_selectRadio == Constants.teacher ? Constants.teacher : _selectRadio == Constants.student ? Constants.student : ""}');
-      return;
+    if (_isLogin && _listHelper.where((helper) => helper == '驗證成功').toList().length == 2) {
+      _isRegister = false;
+      _isLogin = false;
+      if (mounted) context.push('/${_selectRadio == Constants.teacher ? Constants.teacher : _selectRadio == Constants.student ? Constants.student : ""}');
     }
   }
 
-  void _checkAccount(int i) {
+  void _checkAccount() {
     String text = '';
     RegExp exp = RegExp('');
     if (_selectRadio == Constants.teacher) {
@@ -189,20 +186,77 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
       text = 'S';
       exp = RegExp(r"(?![S]+$)(?![0-9]{5}$)");
     }
-    final bool matched = exp.hasMatch(_listController[i].text);
-    _listHelper[i] = matched ? '驗證成功' : '請輸入$text + 5位數字';
+    final bool matched = exp.hasMatch(_listController[0].text);
+    if (!matched) _listHelper[0] = '請輸入$text + 5位數字';
+    return;
   }
 
-  void _checkPassword(int i) {
+  void _checkPassword() {
     RegExp exp = RegExp(r"[A-za-z]");
-    bool matched = exp.hasMatch(_listController[i].text);
+    bool matched = exp.hasMatch(_listController[1].text);
     if (!matched) {
-      setState(() => _listHelper[i] = Constants.passwordHint);
+      setState(() => _listHelper[1] = Constants.passwordHint);
       return;
     }
     exp = RegExp(r"[0-9]");
-    matched = exp.hasMatch(_listController[i].text);
-    _listHelper[i] = matched ? '驗證成功' : Constants.passwordHint;
+    matched = exp.hasMatch(_listController[1].text);
+    if (!matched) _listHelper[1] = Constants.passwordHint;
+    return;
+  }
+
+ Future<void> _checkSQL<T>(int i) async {
+    dynamic param;
+    getSelectData = await _selectData();
+    if (_selectRadio == Constants.teacher) {
+      param = await DBHelper.internal().selectByParam<TeacherModel?>(
+          Constants.teacher,
+          Constants.listTeacher,
+          '${i == 0 ? Constants.teacherId : Constants.teacherPassword} = ?',
+          getSelectData
+      );
+    }
+    if (_selectRadio == Constants.student) {
+      param = await DBHelper.internal().selectByParam<StudentModel?>(
+          Constants.student,
+          Constants.listStudent,
+          '${i == 0 ? Constants.studentId : Constants.studentPassword} = ?',
+          getSelectData
+      );
+    }
+    if (param == null) {
+      _listHelper[i] = '無此${i == 0 ? '帳號' : '密碼'}, 請洽客服或網路管理員, 謝謝.';
+      return;
+    }
+  }
+
+  Future<List> _selectData() async {
+    final getListData = await DBHelper.internal().select(
+        _selectRadio == Constants.teacher
+            ? Constants.teacher
+            : _selectRadio == Constants.student
+            ? Constants.student
+            : '',
+        _selectRadio == Constants.teacher
+            ? Constants.listTeacher
+            : _selectRadio == Constants.student
+            ? Constants.listStudent
+            : []
+    );
+    List<String> selectData = [];
+    for (dynamic data in getListData) {
+      switch(_selectRadio){
+        case Constants.teacher:
+          final TeacherModel model = data as TeacherModel;
+          selectData.add('${model.id}\n${model.teacherId}\n${model.teacherName}\n${model.courseId}\n${model.courseName}');
+          break;
+        case Constants.student:
+          final StudentModel model = data as StudentModel;
+          selectData.add('${model.id}\n${model.studentId}\n${model.studentName}\n${model.courseId}');
+          break;
+      }
+    }
+    log('Home selectData: $selectData');
+    return getListData;
   }
 
   @override
@@ -239,7 +293,7 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [Constants.signUp, Constants.login].asMap().entries.map((e) =>
-                   _btn(e.key, e.value, tap: () {
+                   ButtonWidget(text: e.value, tap: () {
                     if (e.key == 0) {
                       _isRegister = true;
                     }

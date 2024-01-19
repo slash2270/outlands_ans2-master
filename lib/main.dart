@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outlands_ans2/route/router.dart';
+import 'package:outlands_ans2/util/constants.dart';
 
 import 'database/db_helper.dart';
 
@@ -34,6 +35,8 @@ class _MyAppState extends State<MyApp> {
   @override
   void dispose() {
     super.dispose();
+    DBHelper.internal().deleteTable(Constants.teacher);
+    DBHelper.internal().deleteTable(Constants.student);
     DBHelper.internal().close();
   }
 

@@ -1,23 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outlands_ans2/util/constants.dart';
 
-class StudentPage extends StatefulWidget {
+import '../base/base_page.dart';
+
+class StudentPage extends BasePage {
   const StudentPage({super.key});
 
   @override
   State<StudentPage> createState() => _StudentPageState();
 }
 
-class _StudentPageState extends State<StudentPage> {
+class _StudentPageState extends BasePageState<StudentPage> {
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text('${Constants.student} Demo'),
+  String setTitle() => Constants.student;
+
+  @override
+  Widget setBuild() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 15.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+
+              ],
+            )
+          ],
+        ),
       ),
-      body:  Container(),
     );
   }
+
 }

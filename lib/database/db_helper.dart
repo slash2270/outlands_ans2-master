@@ -1,5 +1,7 @@
+import 'package:outlands_ans2/model/teacher_model.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../model/student_model.dart';
 import '../util/constants.dart';
 
 
@@ -13,11 +15,11 @@ class DBHelper {
 
   DBHelper.internal();
 
-  late dynamic dbClient;
+  late Database dbClient;
 
   dynamic d;
 
-  int transaction = 0;
+  List<int> listTransaction = [];
 
   Future<Database?> get db async {
     if (_db != null) {
@@ -30,7 +32,7 @@ class DBHelper {
   Future<Database> initDb() async {
     String databasesPath = await getDatabasesPath();
     String path = join(databasesPath, 'Demo.db');
-    var db = await openDatabase(path, version: 1, onCreate: _onCreate);
+    final db = await openDatabase(path, version: 1, onCreate: _onCreate);
     return db;
   }
 
@@ -54,53 +56,63 @@ class DBHelper {
           ''');
   }
 
-  open() async {
+  /// 打開
+  Future<void> open() async {
     String databasePath = await getDatabasesPath();
     String path = join(databasePath, 'Demo.db');
     await openDatabase(path);
   }
 
-  // // 插入
-  // Future<int> insertBean(String tableName, FiveBean bean) async {
-  //   dbClient = await db;
-  //   await dbClient.transaction((txn) async {
-  //     transaction =  await txn.insert(tableName, bean.toMap());
-  //   });
-  //   return transaction;
-  //   //await dbClient.insert(tableName, bean.toMap());
-  //   //return await dbClient.insert(tableName, bean.toMap());
-  // }
-  //
-  // // 查詢
-  // Future<List<FiveBean>> selectBean(String tableName, List<String> listColumns) async {
-  //   dbClient = await db;
-  //   List<Map> maps = await dbClient.query(tableName, columns: listColumns);
-  //   List<FiveBean> listBean = [];
-  //
-  //   switch(tableName){
-  //     case Constants.tableProduct:
-  //       for (int i = 0; i < maps.length; i++) {
-  //         listBean.add(FiveBean.fromMap(maps[i]));
-  //       }
-  //       break;
-  //   }
-  //
-  //   return Future.value(listBean);
-  // }
-  //
-  // // 根據params查找
-  // Future<dynamic> selectParamBean(String tableName, List listColumns, String key, List args) async {
-  //   dbClient = await db;
-  //   List<Map> maps = await dbClient.query(tableName, columns: listColumns, where: key, whereArgs: args);
-  //   switch(tableName){
-  //     case Constants.tableProduct:
-  //       d = FiveBean.fromMap(maps.first);
-  //   }
-  //   return Future.value(d);
-  // }
-  //
+  /// 插入
+  Future<List<int>> insert<T>(String tableName, List listModel) async {
+    await open();
+    dbClient = (await db)!;
+    await dbClient.transaction((txn) async {
+      for (dynamic model in listModel) {
+        listTransaction.add(await txn.insert(tableName, model.toMap()));
+      }
+    });
+    return listTransaction;
+  }
+
+  /// 查詢
+  Future<List<T>> select<T>(String tableName, List<String> listColumns) async {
+    await open();
+    dbClient = (await db)!;
+    List<Map> maps = await dbClient.query(tableName, columns: listColumns);
+    List<T> list = [];
+    for (Map element in maps) {
+      switch(tableName){
+        case 'teacher':
+          list.add((TeacherModel.fromMap(element)) as T);
+          break;
+        case 'student':
+          list.add((StudentModel.fromMap(element)) as T);
+          break;
+      }
+    }
+    return Future.value(list);
+  }
+
+  // 根據params查找
+  Future<T> selectByParam<T>(String tableName, List<String> listColumns, String key, List args) async {
+    await open();
+    dbClient = (await db)!;
+    List<Map> maps = await dbClient.query(tableName, columns: listColumns, where: key, whereArgs: args);
+    switch(T){
+      case TeacherModel:
+        d = TeacherModel.fromMap(maps.first);
+        break;
+      case StudentModel:
+        d = StudentModel.fromMap(maps.first);
+        break;
+    }
+    return Future.value(d);
+  }
+
   // Future<FiveBean> selectFiveBean(String tableName, List listColumns, String key, List args) async {
-  //   dbClient = await db;
+  //   await open();
+  //   dbClient = (await db)!;
   //   List<Map> maps = await dbClient.query(tableName, columns: listColumns, where: key, whereArgs: args);
   //   return FiveBean.fromMap(maps.first);
   // }
@@ -114,10 +126,10 @@ class DBHelper {
   //   return transaction;
   // }
   //
-  // Future<int> deleteTable() async {
-  //   dbClient = await db;
-  //   return await dbClient.rawDelete("Delete * from ${Constants.tableProduct}");
-  // }
+  Future<int> deleteTable(String tableName) async {
+    dbClient = (await db)!;
+    return await dbClient.rawDelete("Delete * from $tableName");
+  }
   //
   // // 更新
   // Future<int> update(String tableName, List list, String key, List args) async {
@@ -137,9 +149,9 @@ class DBHelper {
   //   return future;
   // }
 
-  // 關閉
+  /// 關閉
   close() async {
-    dbClient = await db;
+    dbClient = (await db)!;
     await dbClient.close();
   }
 
