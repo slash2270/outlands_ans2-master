@@ -55,23 +55,27 @@ class _TeacherPageState extends BasePageState<TeacherPage> {
   }
 
   @override
-  Widget setBuild() {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 15.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                _textFieldCourseWidget(),
-                ButtonWidget(text: '確定', tap: (){
+  void dispose() {
+    _courseController.dispose();
+    super.dispose();
+  }
 
-                }),
-              ],
-            )
-          ],
-        ),
+  @override
+  Widget setBuild() {
+    return Container(
+      alignment: Alignment.center,
+      padding: EdgeInsets.symmetric(horizontal: 40.w),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _textFieldCourseWidget(),
+              ButtonWidget(text: '確定', tap: (){
+
+              }),
+            ],
+          )
+        ],
       ),
     );
   }

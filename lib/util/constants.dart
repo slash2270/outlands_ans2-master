@@ -24,6 +24,7 @@ class Constants {
   static const String course = '課程';
   static const String courseName = 'c_name';
   static const String courseHint = '請輸入課程名稱';
+  static const String dbName = 'Demo';
   static const List<String> listTeacher = [id, teacherId, teacherPassword, teacherName, courseId, courseName];
   static const List<String> listStudent = [id, studentId, studentPassword, studentName, courseId];
   /// textStyle
@@ -59,7 +60,7 @@ class Constants {
     color: Colors.white, fontSize: 18.sp,
     decoration: TextDecoration.none,
   );
-  /// bodrer
+  /// border
   static InputBorder textBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(12.w),
       borderSide: BorderSide(color: Colors.blue, width: 1.w)
@@ -78,6 +79,5 @@ class Constants {
       return "$length";
     }
   }
-
 
 }

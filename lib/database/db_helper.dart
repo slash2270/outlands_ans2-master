@@ -1,9 +1,10 @@
+import 'dart:developer';
+
 import 'package:outlands_ans2/model/teacher_model.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../model/student_model.dart';
 import '../util/constants.dart';
-
 
 class DBHelper {
 
@@ -30,18 +31,19 @@ class DBHelper {
   }
 
   Future<Database> initDb() async {
-    String databasesPath = await getDatabasesPath();
-    String path = join(databasesPath, 'Demo.db');
+    final String databasesPath = await getDatabasesPath();
+    final String path = join(databasesPath, '${Constants.dbName}.db');
     final db = await openDatabase(path, version: 1, onCreate: _onCreate);
     return db;
   }
 
-  void _onCreate(Database db, int newVersion) async {
+  Future<void> _onCreate(Database db, int newVersion) async {
     await db.execute("DROP TABLE IF EXISTS ${Constants.teacher}");
     await db.execute('''
           CREATE TABLE ${Constants.teacher} (
             ${Constants.id} INTEGER PRIMARY KEY,
             ${Constants.teacherId} TEXT,
+            ${Constants.teacherPassword} TEXT,
             ${Constants.teacherName} TEXT,
             ${Constants.courseId} TEXT,
             ${Constants.courseName} TEXT)
@@ -51,6 +53,7 @@ class DBHelper {
           CREATE TABLE ${Constants.student} (
             ${Constants.id} INTEGER PRIMARY KEY,
             ${Constants.studentId} TEXT,
+            ${Constants.studentPassword} TEXT,
             ${Constants.studentName} TEXT,
             ${Constants.courseId} TEXT)
           ''');
@@ -58,8 +61,8 @@ class DBHelper {
 
   /// 打開
   Future<void> open() async {
-    String databasePath = await getDatabasesPath();
-    String path = join(databasePath, 'Demo.db');
+    final String databasePath = await getDatabasesPath();
+    final String path = join(databasePath, '${Constants.dbName}.db');
     await openDatabase(path);
   }
 
@@ -76,17 +79,20 @@ class DBHelper {
   }
 
   /// 查詢
-  Future<List<T>> select<T>(String tableName, List<String> listColumns) async {
+  Future<List<T>> select<T>() async {
     await open();
     dbClient = (await db)!;
-    List<Map> maps = await dbClient.query(tableName, columns: listColumns);
+    List<Map> maps = await dbClient.query(
+        T == TeacherModel ? Constants.teacher : T == StudentModel ? Constants.student : '',
+        columns: T == TeacherModel ? Constants.listTeacher : T == StudentModel ? Constants.listStudent : [],
+    );
     List<T> list = [];
     for (Map element in maps) {
-      switch(tableName){
-        case 'teacher':
+      switch(T){
+        case TeacherModel:
           list.add((TeacherModel.fromMap(element)) as T);
           break;
-        case 'student':
+        case StudentModel:
           list.add((StudentModel.fromMap(element)) as T);
           break;
       }
@@ -94,11 +100,12 @@ class DBHelper {
     return Future.value(list);
   }
 
-  // 根據params查找
-  Future<T> selectByParam<T>(String tableName, List<String> listColumns, String key, List args) async {
+  /// 根據params查找
+  Future<T> selectByParam<T>(String tableName, List<String> listColumns, String where, List args) async {
     await open();
     dbClient = (await db)!;
-    List<Map> maps = await dbClient.query(tableName, columns: listColumns, where: key, whereArgs: args);
+    List<Map> maps = await dbClient.query(tableName, columns: listColumns, where: '$where = ?', whereArgs: args);
+    log('selectByParam $maps');
     switch(T){
       case TeacherModel:
         d = TeacherModel.fromMap(maps.first);
@@ -116,21 +123,24 @@ class DBHelper {
   //   List<Map> maps = await dbClient.query(tableName, columns: listColumns, where: key, whereArgs: args);
   //   return FiveBean.fromMap(maps.first);
   // }
-  //
-  // // 刪除
-  // Future<int> delete(String tableName, String key, List args) async {
-  //   dbClient = await db;
-  //   await dbClient.transaction((txn) async {
-  //     transaction =  await txn.delete(tableName, where: key, whereArgs: args);
-  //   });
-  //   return transaction;
-  // }
-  //
+
+  /// 刪除
+  Future<int> delete(String tableName, {String? where, List? args}) async {
+    int transaction = 0;
+    dbClient = (await db)!;
+    await dbClient.transaction((txn) async {
+      transaction = await txn.delete(tableName, where: where == null ? null : '$where = ?', whereArgs: args);
+    });
+    return transaction;
+  }
+
   Future<int> deleteTable(String tableName) async {
     dbClient = (await db)!;
-    return await dbClient.rawDelete("Delete * from $tableName");
+    return await dbClient.delete(tableName);
   }
-  //
+
+  Future<void> deleteDatabase(String path) => databaseFactory.deleteDatabase(path);
+
   // // 更新
   // Future<int> update(String tableName, List list, String key, List args) async {
   //   dbClient = await db;
@@ -150,7 +160,7 @@ class DBHelper {
   // }
 
   /// 關閉
-  close() async {
+  Future<void> close() async {
     dbClient = (await db)!;
     await dbClient.close();
   }

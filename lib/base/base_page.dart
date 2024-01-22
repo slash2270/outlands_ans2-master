@@ -8,7 +8,7 @@ abstract class BasePage extends StatefulWidget {
   State<StatefulWidget> createState();
 }
 
-abstract class BasePageState<T extends BasePage> extends State<T>  {
+abstract class BasePageState<T extends BasePage> extends State<T> {
 
   String setTitle();
 
@@ -18,7 +18,9 @@ abstract class BasePageState<T extends BasePage> extends State<T>  {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('${setTitle()} Page'), leading: IconButton(icon: const Icon(Icons.keyboard_backspace), onPressed: () => context.pop())),
-      body: setBuild(),
+      body: SafeArea(
+        child: setBuild(),
+      ),
     );
   }
 

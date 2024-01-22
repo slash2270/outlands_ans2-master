@@ -15,7 +15,6 @@ void main() {
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-
   @override
   State<StatefulWidget> createState() => _MyAppState();
 }
@@ -32,12 +31,16 @@ class _MyAppState extends State<MyApp> {
     Future(() => DBHelper.internal().initDb());
   }
 
+  Future<void> setDispose() async {
+    await DBHelper.internal().delete(Constants.teacher);
+    await DBHelper.internal().delete(Constants.student);
+    await DBHelper.internal().deleteDatabase(Constants.dbName);
+  }
+
   @override
   void dispose() {
     super.dispose();
-    DBHelper.internal().deleteTable(Constants.teacher);
-    DBHelper.internal().deleteTable(Constants.student);
-    DBHelper.internal().close();
+    setDispose();
   }
 
   @override
