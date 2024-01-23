@@ -25,7 +25,7 @@ class AppRouter {
             pageBuilder: (context, state) {
               return CustomTransitionPage(
                 key: state.pageKey,
-                child: const TeacherPage(),
+                child: TeacherPage(id: (state.extra) as int),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return ScaleTransition(
                     scale: Tween<double>(begin: 0, end: 1).animate(CurveTween(curve: Curves.bounceInOut).animate(animation)),

@@ -101,28 +101,36 @@ class DBHelper {
   }
 
   /// 根據params查找
-  Future<T> selectByParam<T>(String tableName, List<String> listColumns, String where, List args) async {
+  Future<T> selectByParam<T>(List<String> listColumns, String where, List args) async {
     await open();
     dbClient = (await db)!;
-    List<Map> maps = await dbClient.query(tableName, columns: listColumns, where: '$where = ?', whereArgs: args);
-    log('selectByParam $maps');
     switch(T){
       case TeacherModel:
+        final List<Map> maps = await dbClient.query(Constants.teacher, columns: listColumns, where: '$where = ?', whereArgs: args);
         d = TeacherModel.fromMap(maps.first);
         break;
       case StudentModel:
+        final List<Map> maps = await dbClient.query(Constants.student, columns: listColumns, where: '$where = ?', whereArgs: args);
         d = StudentModel.fromMap(maps.first);
         break;
     }
     return Future.value(d);
   }
 
-  // Future<FiveBean> selectFiveBean(String tableName, List listColumns, String key, List args) async {
-  //   await open();
-  //   dbClient = (await db)!;
-  //   List<Map> maps = await dbClient.query(tableName, columns: listColumns, where: key, whereArgs: args);
-  //   return FiveBean.fromMap(maps.first);
-  // }
+  /// 更新
+  Future<int> update<T>(Map<String, Object> map, String where, List args) async {
+    dbClient = (await db)!;
+    int future = 0;
+    switch(T) {
+      case TeacherModel:
+        future = await dbClient.update(Constants.teacher, map, where: '$where = ?', whereArgs: args);
+        break;
+      case StudentModel:
+        future = await dbClient.update(Constants.student, map, where: '$where = ?', whereArgs: args);
+        break;
+    }
+    return future;
+  }
 
   /// 刪除
   Future<int> delete(String tableName, {String? where, List? args}) async {
@@ -140,24 +148,6 @@ class DBHelper {
   }
 
   Future<void> deleteDatabase(String path) => databaseFactory.deleteDatabase(path);
-
-  // // 更新
-  // Future<int> update(String tableName, List list, String key, List args) async {
-  //   dbClient = await db;
-  //   int future = 0;
-  //   switch(tableName){
-  //     case Constants.tableProduct:
-  //       for(var bean in list){
-  //         FiveBean fiveBean = bean as FiveBean;
-  //         future = await dbClient.update(tableName, fiveBean.toMap(), where: key, whereArgs: args);
-  //         /*if (kDebugMode) {
-  //           print('Five update ${fiveBean.id}');
-  //         }*/
-  //       }
-  //       break;
-  //   }
-  //   return future;
-  // }
 
   /// 關閉
   Future<void> close() async {

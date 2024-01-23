@@ -23,7 +23,10 @@ class Constants {
   static const String studentName = 's_name';
   static const String course = '課程';
   static const String courseName = 'c_name';
-  static const String courseHint = '請輸入課程名稱';
+  static const String courseHint = '請輸入課程';
+  static const String name = '姓名';
+  static const String nameHint = '請輸入姓名';
+  static const String verificationSuccess = '格式正確';
   static const String dbName = 'Demo';
   static const List<String> listTeacher = [id, teacherId, teacherPassword, teacherName, courseId, courseName];
   static const List<String> listStudent = [id, studentId, studentPassword, studentName, courseId];
