@@ -26,6 +26,9 @@ class Constants {
   static const String courseHint = '請輸入課程';
   static const String name = '姓名';
   static const String nameHint = '請輸入姓名';
+  static const String dataError = ', 請洽客服或網路管理員, 謝謝.';
+  static const String idError = '帳號錯誤, 請重新輸入, 謝謝.';
+  static const String passwordError = '密碼錯誤, 請重新輸入, 謝謝.';
   static const String verificationSuccess = '格式正確';
   static const String dbName = 'Demo';
   static const List<String> listTeacher = [id, teacherId, teacherPassword, teacherName, courseId, courseName];

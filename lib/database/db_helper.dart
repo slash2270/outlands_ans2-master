@@ -72,20 +72,22 @@ class DBHelper {
     dbClient = (await db)!;
     await dbClient.transaction((txn) async {
       for (dynamic model in listModel) {
-        listTransaction.add(await txn.insert(tableName, model.toMap()));
+        final transaction = await txn.insert(tableName, model.toMap());
+        listTransaction.add(transaction);
       }
     });
-    return listTransaction;
+    return [];
   }
 
   /// 查詢
-  Future<List<T>> select<T>() async {
+  Future<List<T>> select<T>({List<String>? columns}) async {
     await open();
     dbClient = (await db)!;
     List<Map> maps = await dbClient.query(
         T == TeacherModel ? Constants.teacher : T == StudentModel ? Constants.student : '',
-        columns: T == TeacherModel ? Constants.listTeacher : T == StudentModel ? Constants.listStudent : [],
+        columns: columns ?? (T == TeacherModel ? Constants.listTeacher : T == StudentModel ? Constants.listStudent : []),
     );
+    log('select $maps');
     List<T> list = [];
     for (Map element in maps) {
       switch(T){
@@ -114,6 +116,7 @@ class DBHelper {
         d = StudentModel.fromMap(maps.first);
         break;
     }
+    log('selectByParam $d');
     return Future.value(d);
   }
 
