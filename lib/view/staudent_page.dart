@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -13,8 +15,8 @@ import 'custom/custom_future_builder.dart';
 import 'custom/custom_toast.dart';
 
 class StudentPage extends BasePage {
-  final int id;
-  const StudentPage({super.key, required this.id});
+  final StudentModel model;
+  const StudentPage({super.key, required this.model});
 
   @override
   State<StudentPage> createState() => _StudentPageState();
@@ -22,15 +24,23 @@ class StudentPage extends BasePage {
 
 class _StudentPageState extends BasePageState<StudentPage> {
 
-  @override
-  String setTitle() => Constants.student;
-
   Future<List<TeacherModel>>? _future;
   late List<TeacherModel> _listTeacherModel;
   late bool _isUpdate = false;
   late String _helper = '';
   late int _selectIndex = -1;
   late final TextEditingController _controller = TextEditingController();
+
+  @override
+  String setTitle() => Constants.student;
+
+  @override
+  void initState() {
+    if (widget.model.id != null) {
+      _controller.text = widget.model.studentName!;
+    }
+    super.initState();
+  }
 
   Widget _textFieldWidget() {
     return TextField(
@@ -66,24 +76,25 @@ class _StudentPageState extends BasePageState<StudentPage> {
     );
   }
 
-  Future<void> _checkAndUpdate({bool isChoice = false}) async {
-    final StudentModel model = await DBHelper.internal().selectByParam<StudentModel>(Constants.listStudent, Constants.id, [widget.id]);
+  void _checkAndUpdate({bool isChoice = false}) {
     if (_isUpdate) {
-      if (model.studentName?.isEmpty == true) {
+      log('StudentPage id: ${widget.model.id}');
+      final StudentModel studentModel = widget.model;
+      if (studentModel.studentName?.isEmpty == true) {
         if (_controller.text.isEmpty) {
           _helper = Constants.nameHint;
           return;
         } else {
           _helper = Constants.verificationSuccess;
-          model.studentName = _controller.text;
-          _update(model, isChoice: isChoice);
+          studentModel.studentName = _controller.text;
+          _update(studentModel, isChoice: isChoice);
         }
       } else {
-        _controller.text = model.studentName!;
+        _controller.text = studentModel.studentName!;
       }
       if (isChoice) {
-        model.courseId = _listTeacherModel[_selectIndex].courseId;
-        _update(model, isChoice: isChoice);
+        studentModel.courseId = _listTeacherModel[_selectIndex].courseId;
+        _update(studentModel, isChoice: isChoice);
       }
     } else {
       return;
@@ -91,11 +102,9 @@ class _StudentPageState extends BasePageState<StudentPage> {
   }
 
   Future<void> _update(StudentModel model, {required bool isChoice}) async {
-    await DBHelper.internal().update<StudentModel>(model.toMap(), Constants.id, [widget.id]);
-    if (mounted) {
-      Toast.toast(context, msg: '${isChoice ? '選擇' : '更新'}成功', showTime: 2000, position: ToastPosition.center);
-      _isUpdate = false;
-    }
+    await DBHelper.internal().update<StudentModel>(model.toMap(), Constants.id, [widget.model.id]);
+    if (mounted) Toast.toast(context, msg: '${isChoice ? '選擇' : '更新'}成功', showTime: 2000, position: ToastPosition.center);
+    _isUpdate = false;
   }
 
   void _search() {
@@ -149,7 +158,7 @@ class _StudentPageState extends BasePageState<StudentPage> {
                     getData: () => _future!,
                     widget: (data) {
                       _listTeacherModel = data ?? [];
-                      return data == null
+                      return data == null || data.isEmpty
                           ? const NoDataView()
                           : ListView.separated(
                         key: ValueKey(data),

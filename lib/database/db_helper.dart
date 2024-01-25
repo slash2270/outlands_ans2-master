@@ -111,12 +111,12 @@ class DBHelper {
       case TeacherModel:
         maps = await dbClient.query(Constants.teacher, columns: listColumns, where: '$where = ?', whereArgs: args);
         log('selectByParam map: $maps');
-        d = TeacherModel.fromMap(maps.first);
+        d = maps == [] ? null : TeacherModel.fromMap(maps.first);
         break;
       case StudentModel:
         maps = await dbClient.query(Constants.student, columns: listColumns, where: '$where = ?', whereArgs: args);
         log('selectByParam map: $maps');
-        d = StudentModel.fromMap(maps.first);
+        d = maps == [] ? null : StudentModel.fromMap(maps.first);
         break;
     }
     log('selectByParam $d');

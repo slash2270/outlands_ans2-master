@@ -122,6 +122,7 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
   }
 
   Future<void> _check() async {
+    dynamic model;
     for (int i = 0; i < _listController.length; i++) {
       if (_isRegister || _isLogin) {
         if (_selectRadio.isEmpty) {
@@ -131,7 +132,9 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
             _listHelper[i] = '請輸入6位英文數字';
           } else {
             _regMatch(i);
-            if (_isLogin) await _checkSQL(i);
+            if (_isLogin) {
+              model = await _checkSQL(i);
+            }
           }
         }
       }
@@ -159,20 +162,8 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
       // final String account = Constants.setAccount(getSelectData.length + 1);
       final int id = _getSelectData?.isEmpty == true ? 1 : int.parse(_listController[0].text.substring(1, 6));
       log('SQL id $id');
-      await DBHelper.internal().insert(
-          _selectRadio == Constants.teacher
-          ? Constants.teacher
-          : _selectRadio == Constants.student
-          ? Constants.student
-          : '',
-        _selectRadio == Constants.teacher
-            ? [TeacherModel(id: id, teacherId: _listController[0].text, teacherPassword: _listController[1].text, teacherName: '', courseId: '', courseName: '')]
-            : _selectRadio == Constants.student
-            ? [StudentModel(id: id, studentId: _listController[0].text, studentPassword: _listController[1].text, studentName: '', courseId: '')]
-            : [],
-      );
-      final String identify = _selectRadio == Constants.teacher ? 'T' : _selectRadio == Constants.student ? 'S' : '';
-      if (mounted) Toast.toast(context, msg: '註冊成功\n帳號: $identify${_listController[0].text}\n請登入帳號編輯資料', showTime: 2000, position: ToastPosition.bottom);
+      await DBHelper.internal().insert(_selectRadio, _setInsert(id));
+      if (mounted) Toast.toast(context, msg: '註冊成功\n帳號: ${_listController[0].text}\n請登入帳號編輯資料', showTime: 2000, position: ToastPosition.bottom);
       return;
     }
     if (_isLogin) {
@@ -186,7 +177,7 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
         if (mounted) Toast.toast(context, msg: '格式不正確', showTime: 2000, position: ToastPosition.bottom);
         return;
       }
-      if (mounted) context.push('/${_selectRadio == Constants.teacher ? Constants.teacher : _selectRadio == Constants.student ? Constants.student : ""}', extra: _getSelectData!.length);
+      if (mounted) context.push('/$_selectRadio', extra: model);
     }
   }
 
@@ -215,29 +206,29 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
     setState(() => _listHelper[i] = matched ? Constants.verificationSuccess : i == 0 ? '請輸入$text + 5位數字' : Constants.passwordHint);
   }
 
- Future<void> _checkSQL(int i) async {
+ Future<dynamic> _checkSQL(int i) async {
     switch(_selectRadio) {
       case Constants.teacher:
-        await DBHelper.internal().selectByParam<TeacherModel>(
+        final model = await DBHelper.internal().selectByParam<TeacherModel>(
             Constants.listTeacher,
             Constants.teacherId,
             [_listController[0].text]
-        ).then((model) =>
-            _noDataSQL(model, i, i == 0 ? model.teacherId != _listController[0].text : i == 1 ? model.teacherPassword != _listController[1].text : true));
-        break;
+        );
+        _noDataSQL(model, i, i == 0 ? model.teacherId != _listController[0].text : i == 1 ? model.teacherPassword != _listController[1].text : true);
+        return model;
       case Constants.student:
-        await DBHelper.internal().selectByParam<StudentModel>(
+        final model = await DBHelper.internal().selectByParam<StudentModel>(
             Constants.listStudent,
             Constants.studentId,
             [_listController[0].text]
-        ).then((model) =>
-            _noDataSQL(model, i, i == 0 ? model.studentId != _listController[0].text : i == 1 ? model.studentPassword != _listController[1].text : true));
-        break;
+        );
+        _noDataSQL(model, i, i == 0 ? model.studentId != _listController[0].text : i == 1 ? model.studentPassword != _listController[1].text : true);
+        return model;
     }
   }
 
   void _noDataSQL(dynamic model, int i, bool isText) {
-    if (model.id == null) {
+    if (model == null) {
       _listHelper[i] = '無資料${Constants.dataError}';
       return;
     }
@@ -245,16 +236,25 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
   }
 
   Future<List> _selectData() async {
-    List getListData = [];
     switch(_selectRadio) {
       case Constants.teacher:
-        getListData = await DBHelper.internal().select<TeacherModel>();
-        break;
+        return await DBHelper.internal().select<TeacherModel>();
       case Constants.student:
-        getListData = await DBHelper.internal().select<StudentModel>();
-        break;
+        return await DBHelper.internal().select<StudentModel>();
+      default:
+        return [];
     }
-    return getListData;
+  }
+
+  List _setInsert(int id) {
+    switch(_selectRadio) {
+      case Constants.teacher:
+        return [TeacherModel(id: id, teacherId: _listController[0].text, teacherPassword: _listController[1].text, teacherName: '', courseId: '', courseName: '')];
+      case Constants.student:
+        return [StudentModel(id: id, studentId: _listController[0].text, studentPassword: _listController[1].text, studentName: '', courseId: '')];
+      default:
+        return [];
+    }
   }
 
   @override

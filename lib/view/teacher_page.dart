@@ -12,10 +12,11 @@ import 'package:outlands_ans2/widget/button_widget.dart';
 
 import '../database/db_helper.dart';
 import 'custom/custom_toast.dart';
+import 'no_data_view.dart';
 
 class TeacherPage extends BasePage {
-  final int id;
-  const TeacherPage({super.key, required this.id});
+  final TeacherModel model;
+  const TeacherPage({super.key, required this.model});
 
   @override
   State<TeacherPage> createState() => _TeacherPageState();
@@ -30,6 +31,15 @@ class _TeacherPageState extends BasePageState<TeacherPage> {
 
   @override
   String setTitle() => Constants.teacher;
+
+  @override
+  void initState() {
+    if (widget.model.id != null) {
+      _listController[0].text = widget.model.teacherName!;
+      _listController[1].text = widget.model.courseName!;
+    }
+    super.initState();
+  }
 
   Widget _textFieldWidget(int i) {
     return TextField(
@@ -75,12 +85,12 @@ class _TeacherPageState extends BasePageState<TeacherPage> {
           _listHelper[i] = Constants.verificationSuccess;
         }
       }
-      final TeacherModel teacherModel = await DBHelper.internal().selectByParam<TeacherModel>(Constants.listTeacher, '${Constants.id} = ?', [widget.id]);
+      log('TeacherPage id: ${widget.model.id}');
+      final TeacherModel teacherModel = widget.model;
       teacherModel.teacherName = _listController[1].text;
       teacherModel.courseId = teacherModel.teacherId?.replaceAll(RegExp('[T]'), 'C');
       teacherModel.courseName = _listController[0].text;
-      log('TeacherPage ${teacherModel.toMap()}');
-      await DBHelper.internal().update<TeacherModel>(teacherModel.toMap(), Constants.id, [widget.id]);
+      await DBHelper.internal().update<TeacherModel>(teacherModel.toMap(), Constants.id, [teacherModel.id]);
       if (mounted) {
         Toast.toast(context, msg: '更新成功', showTime: 2000, position: ToastPosition.center);
         _isCheck = false;
@@ -139,12 +149,14 @@ class _TeacherPageState extends BasePageState<TeacherPage> {
                     key: ValueKey(_future),
                     getData: () => _future!,
                     widget: (data) {
-                      return ListView.separated(
+                      return data == null || data.isEmpty
+                          ? const NoDataView()
+                          : ListView.separated(
                         addAutomaticKeepAlives: false,
                         addRepaintBoundaries: false,
                         cacheExtent: 80.w,
                         shrinkWrap: true,
-                        itemCount: data!.length,
+                        itemCount: data.length,
                         itemBuilder: (context, index) => Text(data[index].studentName ?? '無學生選課', style: Constants.textField20, textAlign: TextAlign.center),
                         separatorBuilder: (context, index) => SizedBox(height: 16.w),
                       );
