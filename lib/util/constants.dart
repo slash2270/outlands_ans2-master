@@ -71,19 +71,5 @@ class Constants {
       borderRadius: BorderRadius.circular(12.w),
       borderSide: BorderSide(color: Colors.blue, width: 1.w)
   );
-  /// function
-  static String setAccount(int length) {
-    if (length < 10) {
-      return "0000$length";
-    } else if (length < 100) {
-      return "000$length";
-    } else if (length < 1000) {
-      return "00$length";
-    } else if (length < 10000) {
-      return "0$length";
-    } else {
-      return "$length";
-    }
-  }
 
 }

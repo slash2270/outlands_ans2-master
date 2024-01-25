@@ -159,7 +159,6 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
         if (mounted) Toast.toast(context, msg: '格式不正確', showTime: 2000, position: ToastPosition.bottom);
         return;
       }
-      // final String account = Constants.setAccount(getSelectData.length + 1);
       final int id = _getSelectData?.isEmpty == true ? 1 : int.parse(_listController[0].text.substring(1, 6));
       log('SQL id $id');
       await DBHelper.internal().insert(_selectRadio, _setInsert(id));
