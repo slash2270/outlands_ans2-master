@@ -10,7 +10,7 @@ class Constants {
   static const String account = '帳號:';
   static const String accountHint = '註冊不用輸入帳號, 註冊後畫面領取';
   static const String password = '密碼:';
-  static const String passwordHint = '請輸入1位英文+5位數字';
+  static const String passwordHint = '英文數字組合';
   static const String signUp = '註冊';
   static const String login = '登入';
   static const String id = 'id';

@@ -66,28 +66,34 @@ class _StudentPageState extends BasePageState<StudentPage> {
     );
   }
 
-  void _checkAndUpdate({bool isChoice = false}) {
+  Future<void> _checkAndUpdate({bool isChoice = false}) async {
+    final StudentModel model = await DBHelper.internal().selectByParam<StudentModel>(Constants.listStudent, Constants.id, [widget.id]);
     if (_isUpdate) {
-      if (_controller.text.isEmpty) {
-        _helper = Constants.nameHint;
-        return;
+      if (model.studentName?.isEmpty == true) {
+        if (_controller.text.isEmpty) {
+          _helper = Constants.nameHint;
+          return;
+        } else {
+          _helper = Constants.verificationSuccess;
+          model.studentName = _controller.text;
+          _update(model, isChoice: isChoice);
+        }
       } else {
-        _helper = Constants.verificationSuccess;
-        _update(name: _controller.text, course: null);
+        _controller.text = model.studentName!;
       }
-      if (isChoice) _update(name: null, course: _listTeacherModel[_selectIndex].courseId);
+      if (isChoice) {
+        model.courseId = _listTeacherModel[_selectIndex].courseId;
+        _update(model, isChoice: isChoice);
+      }
     } else {
       return;
     }
   }
 
-  Future<void> _update({String? name, String? course}) async {
-    final StudentModel model = await DBHelper.internal().selectByParam<StudentModel>(Constants.listStudent, Constants.id, [widget.id]);
-    if (name != null) model.studentName = name;
-    if (course != null) model.courseId = course;
+  Future<void> _update(StudentModel model, {required bool isChoice}) async {
     await DBHelper.internal().update<StudentModel>(model.toMap(), Constants.id, [widget.id]);
     if (mounted) {
-      Toast.toast(context, msg: name != null ? '更新成功' : course != null ? '選擇成功' : '', showTime: 2000, position: ToastPosition.center);
+      Toast.toast(context, msg: '${isChoice ? '選擇' : '更新'}成功', showTime: 2000, position: ToastPosition.center);
       _isUpdate = false;
     }
   }

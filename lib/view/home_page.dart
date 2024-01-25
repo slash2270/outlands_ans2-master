@@ -138,7 +138,6 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
       log('text: ${_listText[i]} controller: ${_listController[i].text}');
     }
     if (mounted) setState(() {});
-    // if (_listHelper.where((helper) => helper == '驗證成功').toList().length != 2) return;
     _getSelectData = await _selectData();
     log('helper: $_listHelper getSelectData: $_getSelectData length: ${_getSelectData?.length}');
     if (_isRegister) {
@@ -195,29 +194,25 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
     bool matched;
     String text = '';
     RegExp exp = RegExp('');
-    if (i == 0) {
-      if (_selectRadio == Constants.teacher) {
-        text = 'T';
-        exp = RegExp(r"(?![T]+$)(?![0-9]{5}$)");
-      }
-      if (_selectRadio == Constants.student) {
-        text = 'S';
-        exp = RegExp(r"(?![S]+$)(?![0-9]{5}$)");
-      }
-      matched = exp.hasMatch(_listController[i].text);
-      setState(() => _listHelper[i] = matched ? Constants.verificationSuccess : '請輸入$text + 5位數字');
+    switch(i) {
+      case 0:
+        switch(_selectRadio) {
+          case Constants.teacher:
+            text = 'T';
+            exp = RegExp(r"(?![T]+$)(?![0-9]{5}$)");
+            break;
+          case Constants.student:
+            text = 'S';
+            exp = RegExp(r"(?![S]+$)(?![0-9]{5}$)");
+            break;
+        }
+        break;
+      case 1:
+        exp = RegExp(r"[A-za-z0-9]");
+        break;
     }
-    if (i == 1) {
-      exp = RegExp(r"[A-za-z]");
-      matched = exp.hasMatch(_listController[i].text);
-      if (!matched) {
-        setState(() => _listHelper[i] = Constants.passwordHint);
-        return;
-      }
-      exp = RegExp(r"[0-9]");
-      matched = exp.hasMatch(_listController[i].text);
-      setState(() => _listHelper[i] = matched ? Constants.verificationSuccess : Constants.passwordHint);
-    }
+    matched = exp.hasMatch(_listController[i].text);
+    setState(() => _listHelper[i] = matched ? Constants.verificationSuccess : i == 0 ? '請輸入$text + 5位數字' : Constants.passwordHint);
   }
 
  Future<void> _checkSQL(int i) async {
@@ -227,47 +222,26 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
             Constants.listTeacher,
             Constants.teacherId,
             [_listController[0].text]
-        ).then((model) {
-          _noDataSQL(model, i);
-          switch(i) {
-            case 0:
-              log('checkSQL teacherId ${model.teacherId} text ${_listController[0].text}');
-              _listHelper[i] = model.teacherId != _listController[0].text ? '無此帳號${Constants.dataError}' : Constants.verificationSuccess;
-              break;
-            case 1:
-              log('checkSQL teacherPassword ${model.teacherPassword} text ${_listController[1].text}');
-              _listHelper[i] = model.teacherPassword != _listController[1].text ? '無此密碼${Constants.dataError}' : Constants.verificationSuccess;
-              break;
-          }
-        });
+        ).then((model) =>
+            _noDataSQL(model, i, i == 0 ? model.teacherId != _listController[0].text : i == 1 ? model.teacherPassword != _listController[1].text : true));
         break;
       case Constants.student:
         await DBHelper.internal().selectByParam<StudentModel>(
             Constants.listStudent,
             Constants.studentId,
             [_listController[0].text]
-        ).then((model) {
-          _noDataSQL(model, i);
-          switch(i) {
-            case 0:
-              log('checkSQL teacherId ${model.studentId} text ${_listController[0].text}');
-              _listHelper[i] = model.studentId != _listController[0].text ? '無此帳號${Constants.dataError}' : Constants.verificationSuccess;
-              break;
-            case 1:
-              log('checkSQL teacherPassword ${model.studentPassword} text ${_listController[1].text}');
-              _listHelper[i] = model.studentPassword != _listController[1].text ? '無此密碼${Constants.dataError}' : Constants.verificationSuccess;
-              break;
-          }
-        });
+        ).then((model) =>
+            _noDataSQL(model, i, i == 0 ? model.studentId != _listController[0].text : i == 1 ? model.studentPassword != _listController[1].text : true));
         break;
     }
   }
 
-  void _noDataSQL(dynamic model, int i) {
+  void _noDataSQL(dynamic model, int i, bool isText) {
     if (model.id == null) {
       _listHelper[i] = '無資料${Constants.dataError}';
       return;
     }
+    _listHelper[i] = isText ? '無此${i == 0 ? '帳號': '密碼'}${Constants.dataError}' : Constants.verificationSuccess;
   }
 
   Future<List> _selectData() async {
@@ -281,20 +255,6 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
         break;
     }
     return getListData;
-    // final List<String> selectData = [];
-    // for (dynamic data in getListData) {
-    //   switch(_selectRadio){
-    //     case Constants.teacher:
-    //       final TeacherModel model = data as TeacherModel;
-    //       selectData.add('${model.id}\n${model.teacherId}\n${model.teacherPassword}\n${model.teacherName}\n${model.courseId}\n${model.courseName}');
-    //       break;
-    //     case Constants.student:
-    //       final StudentModel model = data as StudentModel;
-    //       selectData.add('${model.id}\n${model.studentId}\n${model.studentPassword}\n${model.studentName}\n${model.courseId}');
-    //       break;
-    //   }
-    // }
-    // log('Home selectData: $selectData');
   }
 
   @override

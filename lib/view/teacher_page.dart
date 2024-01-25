@@ -79,7 +79,7 @@ class _TeacherPageState extends BasePageState<TeacherPage> {
       teacherModel.teacherName = _listController[1].text;
       teacherModel.courseId = teacherModel.teacherId?.replaceAll(RegExp('[T]'), 'C');
       teacherModel.courseName = _listController[0].text;
-      // log('TeacherPage ${teacherModel.toMap()}');
+      log('TeacherPage ${teacherModel.toMap()}');
       await DBHelper.internal().update<TeacherModel>(teacherModel.toMap(), Constants.id, [widget.id]);
       if (mounted) {
         Toast.toast(context, msg: '更新成功', showTime: 2000, position: ToastPosition.center);
