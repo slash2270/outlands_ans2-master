@@ -131,7 +131,7 @@ class _StudentPageState extends BasePageState<StudentPage> {
                     ButtonWidget(text: '選擇課程',
                         tap: () {
                           setState(() => _isUpdate = true);
-                          _checkAndUpdate();
+                          _checkAndUpdate(isChoice: true);
                         }),
                   ],
                 ),

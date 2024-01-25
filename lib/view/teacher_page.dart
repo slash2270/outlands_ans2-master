@@ -75,7 +75,7 @@ class _TeacherPageState extends BasePageState<TeacherPage> {
           _listHelper[i] = Constants.verificationSuccess;
         }
       }
-      final TeacherModel teacherModel = await DBHelper.internal().selectByParam<TeacherModel>(Constants.listTeacher, Constants.id, [widget.id]);
+      final TeacherModel teacherModel = await DBHelper.internal().selectByParam<TeacherModel>(Constants.listTeacher, '${Constants.id} = ?', [widget.id]);
       teacherModel.teacherName = _listController[1].text;
       teacherModel.courseId = teacherModel.teacherId?.replaceAll(RegExp('[T]'), 'C');
       teacherModel.courseName = _listController[0].text;

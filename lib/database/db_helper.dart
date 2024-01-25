@@ -106,17 +106,39 @@ class DBHelper {
   Future<T> selectByParam<T>(List<String> listColumns, String where, List args) async {
     await open();
     dbClient = (await db)!;
+    List<Map> maps;
     switch(T){
       case TeacherModel:
-        final List<Map> maps = await dbClient.query(Constants.teacher, columns: listColumns, where: '$where = ?', whereArgs: args);
+        maps = await dbClient.query(Constants.teacher, columns: listColumns, where: '$where = ?', whereArgs: args);
+        log('selectByParam map: $maps');
         d = TeacherModel.fromMap(maps.first);
         break;
       case StudentModel:
-        final List<Map> maps = await dbClient.query(Constants.student, columns: listColumns, where: '$where = ?', whereArgs: args);
+        maps = await dbClient.query(Constants.student, columns: listColumns, where: '$where = ?', whereArgs: args);
+        log('selectByParam map: $maps');
         d = StudentModel.fromMap(maps.first);
         break;
     }
     log('selectByParam $d');
+    return Future.value(d);
+  }
+
+  Future<T> selectRawQuery<T>(List<String> listColumns, String where, List args) async {
+    await open();
+    dbClient = (await db)!;
+    switch(T){
+      case TeacherModel:
+        final List<Map<String, Object?>> maps = await dbClient.rawQuery('SELECT $listColumns FROM ${Constants.teacher} WHERE id=?', [2]);
+        log('selectRawQuery map: $maps');
+        d = TeacherModel.fromMap(maps.first);
+        break;
+      case StudentModel:
+        final List<Map> maps = await dbClient.rawQuery('SELECT * FROM ${Constants.student} WHERE $where');
+        log('selectRawQuery map: $maps');
+        d = StudentModel.fromMap(maps.first);
+        break;
+    }
+    log('selectRawQuery d: $d');
     return Future.value(d);
   }
 

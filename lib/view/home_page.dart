@@ -135,29 +135,26 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
           }
         }
       }
-      // log('text:${_listText[i]}');
+      log('text: ${_listText[i]} controller: ${_listController[i].text}');
     }
     if (mounted) setState(() {});
     // if (_listHelper.where((helper) => helper == '驗證成功').toList().length != 2) return;
     _getSelectData = await _selectData();
-    log('getSelectData: $_getSelectData, length: ${_getSelectData?.length}');
+    log('helper: $_listHelper getSelectData: $_getSelectData length: ${_getSelectData?.length}');
     if (_isRegister) {
+      _isRegister = false;
+      _isLogin = false;
       if (_getSelectData?.length == 99999) {
-        if (mounted) Toast.toast(context, msg: '帳號數量已滿, 請聯絡客服人員, 謝謝', showTime: 2000, position: ToastPosition.center);
-        _isRegister = false;
-        _isLogin = false;
+        if (mounted) Toast.toast(context, msg: '帳號數量已滿, 請聯絡客服人員, 謝謝', showTime: 2000, position: ToastPosition.bottom);
         return;
       }
       final int number = int.parse(_listController[0].text.substring(1, 6));
-      if (_getSelectData != null && _getSelectData!.where((element) => element.id == number).toList().isNotEmpty) {
-        if (mounted) Toast.toast(context, msg: '此帳號已註冊, 請換個號碼, 謝謝', showTime: 2000, position: ToastPosition.center);
-        _isRegister = false;
-        _isLogin = false;
+      if (_getSelectData!.where((element) => element.id == number).toList().isNotEmpty) {
+        if (mounted) Toast.toast(context, msg: '此帳號已註冊, 請換個號碼, 謝謝', showTime: 2000, position: ToastPosition.bottom);
         return;
       }
       if (_listHelper.where((element) => element != Constants.verificationSuccess).toList().length == _listHelper.length) {
-        _isRegister = false;
-        _isLogin = false;
+        if (mounted) Toast.toast(context, msg: '格式不正確', showTime: 2000, position: ToastPosition.bottom);
         return;
       }
       // final String account = Constants.setAccount(getSelectData.length + 1);
@@ -176,24 +173,21 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
             : [],
       );
       final String identify = _selectRadio == Constants.teacher ? 'T' : _selectRadio == Constants.student ? 'S' : '';
-      if (mounted) Toast.toast(context, msg: '註冊成功\n帳號: $identify${_listController[0].text}\n請登入帳號編輯資料', showTime: 2000, position: ToastPosition.center);
-      _isRegister = false;
-      _isLogin = false;
+      if (mounted) Toast.toast(context, msg: '註冊成功\n帳號: $identify${_listController[0].text}\n請登入帳號編輯資料', showTime: 2000, position: ToastPosition.bottom);
       return;
     }
     if (_isLogin) {
       _isRegister = false;
       _isLogin = false;
-      if (mounted) {
-        if (_getSelectData == null || _getSelectData?.isEmpty == true) {
-          Toast.toast(context, msg: '未註冊帳號', showTime: 2000, position: ToastPosition.center);
-          return;
-        }
-        if (_listHelper.where((element) => element != Constants.verificationSuccess).toList().length == _listHelper.length) {
-          return;
-        }
-        context.push('/${_selectRadio == Constants.teacher ? Constants.teacher : _selectRadio == Constants.student ? Constants.student : ""}', extra: _getSelectData!.length);
+      if (_getSelectData == null || _getSelectData?.isEmpty == true) {
+        if (mounted) Toast.toast(context, msg: '未註冊帳號', showTime: 2000, position: ToastPosition.bottom);
+        return;
       }
+      if (_listHelper.where((element) => element != Constants.verificationSuccess).toList().isNotEmpty) {
+        if (mounted) Toast.toast(context, msg: '格式不正確', showTime: 2000, position: ToastPosition.bottom);
+        return;
+      }
+      if (mounted) context.push('/${_selectRadio == Constants.teacher ? Constants.teacher : _selectRadio == Constants.student ? Constants.student : ""}', extra: _getSelectData!.length);
     }
   }
 
@@ -227,28 +221,66 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
   }
 
  Future<void> _checkSQL(int i) async {
-    dynamic model;
-    if (_selectRadio == Constants.teacher) {
-      model = await DBHelper.internal().selectByParam<TeacherModel?>(
-          Constants.listTeacher,
-          i == 0 ? Constants.teacherId : Constants.teacherPassword,
-          [_listController[i].text]
-      );
+    switch(_selectRadio) {
+      case Constants.teacher:
+        await DBHelper.internal().selectByParam<TeacherModel>(
+            Constants.listTeacher,
+            Constants.teacherId,
+            [_listController[0].text]
+        ).then((model) {
+          _noDataSQL(model, i);
+          switch(i) {
+            case 0:
+              log('checkSQL teacherId ${model.teacherId} text ${_listController[0].text}');
+              _listHelper[i] = model.teacherId != _listController[0].text ? '無此帳號${Constants.dataError}' : Constants.verificationSuccess;
+              break;
+            case 1:
+              log('checkSQL teacherPassword ${model.teacherPassword} text ${_listController[1].text}');
+              _listHelper[i] = model.teacherPassword != _listController[1].text ? '無此密碼${Constants.dataError}' : Constants.verificationSuccess;
+              break;
+          }
+        });
+        break;
+      case Constants.student:
+        await DBHelper.internal().selectByParam<StudentModel>(
+            Constants.listStudent,
+            Constants.studentId,
+            [_listController[0].text]
+        ).then((model) {
+          _noDataSQL(model, i);
+          switch(i) {
+            case 0:
+              log('checkSQL teacherId ${model.studentId} text ${_listController[0].text}');
+              _listHelper[i] = model.studentId != _listController[0].text ? '無此帳號${Constants.dataError}' : Constants.verificationSuccess;
+              break;
+            case 1:
+              log('checkSQL teacherPassword ${model.studentPassword} text ${_listController[1].text}');
+              _listHelper[i] = model.studentPassword != _listController[1].text ? '無此密碼${Constants.dataError}' : Constants.verificationSuccess;
+              break;
+          }
+        });
+        break;
     }
-    if (_selectRadio == Constants.student) {
-      model = await DBHelper.internal().selectByParam<StudentModel?>(
-          Constants.listStudent,
-          i == 0 ? Constants.studentId : Constants.studentPassword,
-          [_listController[i].text]
-      );
+  }
+
+  void _noDataSQL(dynamic model, int i) {
+    if (model.id == null) {
+      _listHelper[i] = '無資料${Constants.dataError}';
+      return;
     }
-    if (model == null) _listHelper[i] = '無此${i == 0 ? '帳號' : '密碼'}${Constants.dataError}';
   }
 
   Future<List> _selectData() async {
     List getListData = [];
-    if (_selectRadio == Constants.teacher) getListData = await DBHelper.internal().select<TeacherModel>();
-    if (_selectRadio == Constants.student) getListData = await DBHelper.internal().select<StudentModel>();
+    switch(_selectRadio) {
+      case Constants.teacher:
+        getListData = await DBHelper.internal().select<TeacherModel>();
+        break;
+      case Constants.student:
+        getListData = await DBHelper.internal().select<StudentModel>();
+        break;
+    }
+    return getListData;
     // final List<String> selectData = [];
     // for (dynamic data in getListData) {
     //   switch(_selectRadio){
@@ -263,7 +295,6 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
     //   }
     // }
     // log('Home selectData: $selectData');
-    return getListData;
   }
 
   @override
