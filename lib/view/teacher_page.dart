@@ -120,23 +120,21 @@ class _TeacherPageState extends BasePageState<TeacherPage> {
         padding: EdgeInsets.symmetric(vertical: 20.w, horizontal: 40.w),
         child: Column(
           children: [
+            for (final (int index, _) in _listController.indexed)
             Column(
-              children: _listController.asMap().entries.map((map) {
-                return Column(
-                  children: [
-                    _textFieldWidget(map.key),
-                    SizedBox(height: 16.w),
-                    Visibility(
-                      visible: map.key == _listController.length - 1,
-                      child: ButtonWidget(text: '更新個人資料',
-                          tap: () {
-                            setState(() => _isCheck = true);
-                            _checkAndUpdate();
-                          }),
-                    ),
-                  ],
-                );
-              }).toList(),
+              children: [
+                _textFieldWidget(index),
+                SizedBox(height: 16.w),
+                Visibility(
+                  visible: index == _listController.length - 1,
+                  child: ButtonWidget(
+                      text: '更新個人資料',
+                      tap: () {
+                        setState(() => _isCheck = true);
+                        _checkAndUpdate();
+                      }),
+                ),
+              ],
             ),
             SizedBox(height: 40.w),
             Column(

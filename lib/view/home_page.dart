@@ -31,7 +31,7 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
   @override
   String setTitle() => Constants.home;
 
-  Widget _radioWidget(int index, String name) {
+  Widget _radioWidget(String name) {
     return Row(
       children: [
         Text(name, style: Constants.textLabel),
@@ -275,27 +275,32 @@ class _MyHomePageState extends BasePageState<MyHomePage> {
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [Constants.teacher, Constants.student].asMap().entries.map((e) => _radioWidget(e.key, e.value)).toList(),
+              children: [
+                for (final String e in [Constants.teacher, Constants.student])
+                _radioWidget(e),
+              ]
             ),
             SizedBox(height: 20.w),
+            for (final (index, _) in _listController.indexed)
             Column(
-              children: _listController.asMap().entries.map((e) => Column(
-                children: [
-                  _textFieldWidget(e.key),
-                  SizedBox(height: 16.w),
-                ],
-              )).toList(),
+              children: [
+                _textFieldWidget(index),
+                SizedBox(height: 16.w),
+              ],
             ),
             SizedBox(height: 10.w),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [Constants.signUp, Constants.login].asMap().entries.map((e) =>
-                   ButtonWidget(text: e.value, tap: () {
-                    if (e.key == 0) _isRegister = true;
-                    if (e.key == 1) _isLogin = true;
-                    _check();
-                }),
-              ).toList(),
+              children: [
+              for (final (index, e) in [Constants.signUp, Constants.login].indexed)
+                  ButtonWidget(
+                      text: e,
+                      tap: () {
+                        if (index == 0) _isRegister = true;
+                        if (index == 1) _isLogin = true;
+                        _check();
+                      }),
+                ],
             ),
           ],
         ),
